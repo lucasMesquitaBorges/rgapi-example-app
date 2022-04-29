@@ -1,0 +1,7 @@
+.setup/
+.dockerignore
+.editorconfig
+.env.example
+.gitignore
+docker-compose.yaml
+main
