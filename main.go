@@ -1,11 +1,10 @@
 package main
 
 import (
-	net_http "net/http"
 	"os"
-	"riot-developer-proxy/handlers/http"
-	"riot-developer-proxy/internal/services"
-	"time"
+	"riot-developer-proxy/handlers/httpcontrollers"
+	"riot-developer-proxy/internal/domain/services"
+	"riot-developer-proxy/rgapis"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -19,24 +18,22 @@ func init() {
 }
 
 func main() {
-	hc := &http.HTTPController{
-		RiotClient: initRiotClient(),
-	}
+	hc := initHTTPController()
 
 	e := echo.New()
 	e.Use(middleware.Recover())
 
-	e.Any("/*", hc.ProxyToRIOTApi)
+	e.GET("/summoners/overview", hc.SummonerProfileByName)
 
 	e.Logger.Fatal(e.Start(":" + os.Getenv("APP_PORT")))
 }
 
-func initRiotClient() *services.RiotClient {
-	client := &net_http.Client{
-		Timeout: time.Second * 10,
-	}
-	riotClient := services.NewRiotClient(*client, os.Getenv("RIOT_API_BASE_URI"))
-	riotClient.WithToken(os.Getenv("RIOT_API_TOKEN"))
+func initHTTPController() *httpcontrollers.HTTPController {
+	rgapiClient := rgapis.NewRGAPIClient(os.Getenv("RIOT_API_TOKEN"))
+	rgapi := rgapis.NewRGAPIWrapper(rgapiClient)
+	svc := services.NewSummonerService(rgapi)
 
-	return riotClient
+	return &httpcontrollers.HTTPController{
+		SummonerService: svc,
+	}
 }
