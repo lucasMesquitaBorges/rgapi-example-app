@@ -23,7 +23,9 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Recover())
 
+	e.GET("/", hc.Login)
 	e.GET("/summoners/overview", hc.SummonerProfileByName)
+	e.GET(httpcontrollers.APP_CALLBACK_PATH, hc.OAUTHCallback)
 
 	if err := e.Start(":" + os.Getenv("APP_PORT")); err != nil {
 		e.Logger.Fatal(err)
