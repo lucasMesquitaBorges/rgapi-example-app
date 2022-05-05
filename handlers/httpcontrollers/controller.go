@@ -3,11 +3,8 @@ package httpcontrollers
 import (
 	"log"
 	"net/http"
-	"os"
 	"riot-developer-proxy/internal/domain/entities"
 	"riot-developer-proxy/internal/domain/services"
-	"riot-developer-proxy/repositories"
-	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -42,17 +39,7 @@ type LeagueEntryResponse struct {
 }
 
 func (hr *HTTPController) SummonerProfileByName(c echo.Context) error {
-	client := &http.Client{
-		Timeout: time.Second * 10,
-	}
-
-	riotClient := repositories.NewRiotClient(client, os.Getenv("RIOT_API_BASE_URI"))
-	riotClient.WithToken(os.Getenv("RIOT_API_TOKEN"))
-
-	repo := repositories.NewRiotRepository(riotClient)
-
-	svc := services.NewSummonerService(repo)
-	summoner, err := svc.GetSummonerProfile(
+	summoner, err := hr.SummonerService.GetSummonerProfile(
 		c.Request().Context(),
 		c.QueryParam("region"),
 		c.QueryParam("name"),

@@ -25,7 +25,9 @@ func main() {
 
 	e.GET("/summoners/overview", hc.SummonerProfileByName)
 
-	e.Logger.Fatal(e.Start(":" + os.Getenv("APP_PORT")))
+	if err := e.Start(":" + os.Getenv("APP_PORT")); err != nil {
+		e.Logger.Fatal(err)
+	}
 }
 
 func initHTTPController() *httpcontrollers.HTTPController {
