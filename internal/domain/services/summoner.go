@@ -35,6 +35,16 @@ func (rs *SummonerService) GetSummonerProfile(ctx context.Context, region string
 	return summoner, nil
 }
 
+func (rs *SummonerService) GetAccountByAccessToken(ctx context.Context, accessToken string) (*entities.Account, error) {
+	accountDTO, err := rs.rgapi.GetAccountByAccessToken(ctx, accessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	account := entities.Account(*accountDTO)
+	return &account, nil
+}
+
 func (rs *SummonerService) getSummonerLeagueEntries(ctx context.Context, region string, summoner *entities.Summoner) ([]entities.LeagueEntry, error) {
 	leagueEntriesDTO, err := rs.rgapi.GetSummonerLeagueEntries(ctx, region, summoner)
 	if err != nil {

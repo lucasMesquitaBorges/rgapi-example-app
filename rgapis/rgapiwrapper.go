@@ -10,6 +10,8 @@ import (
 	"riot-developer-proxy/internal/domain/entities"
 )
 
+const RGAPI_DEFAULT_REGION = "americas"
+
 type RGAPIWrapper struct {
 	rgapiClient *rgapiClient
 }
@@ -38,6 +40,12 @@ type LeagueEntryDTO struct {
 	Inactive     bool   `json:"inactive"`
 }
 
+type AccountDTO struct {
+	PUUID    string `json:"puuid"`
+	GameName string `json:"gameName"`
+	TagLine  string `json:"tagLine"`
+}
+
 func NewRGAPIWrapper(rgapiClient *rgapiClient) *RGAPIWrapper {
 	return &RGAPIWrapper{
 		rgapiClient: rgapiClient,
@@ -45,7 +53,7 @@ func NewRGAPIWrapper(rgapiClient *rgapiClient) *RGAPIWrapper {
 }
 
 func (rr *RGAPIWrapper) GetAccountBySummonerName(ctx context.Context, region string, summonerName string) (*SummonerDTO, error) {
-	resp, err := rr.rgapiClient.DoReq(ctx, "GET", region, "/lol/summoner/v4/summoners/by-name/"+url.PathEscape(summonerName))
+	resp, err := rr.rgapiClient.DoReq(ctx, "GET", region, "/lol/summoner/v4/summoners/by-name/"+url.PathEscape(summonerName), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +77,7 @@ func (rr *RGAPIWrapper) GetAccountBySummonerName(ctx context.Context, region str
 }
 
 func (rr *RGAPIWrapper) GetSummonerLeagueEntries(ctx context.Context, region string, summoner *entities.Summoner) ([]LeagueEntryDTO, error) {
-	resp, err := rr.rgapiClient.DoReq(ctx, "GET", region, "/lol/league/v4/entries/by-summoner/"+url.PathEscape(summoner.ID))
+	resp, err := rr.rgapiClient.DoReq(ctx, "GET", region, "/lol/league/v4/entries/by-summoner/"+url.PathEscape(summoner.ID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -90,4 +98,28 @@ func (rr *RGAPIWrapper) GetSummonerLeagueEntries(ctx context.Context, region str
 	}
 
 	return leagueEntryDTO, nil
+}
+
+func (rr *RGAPIWrapper) GetAccountByAccessToken(ctx context.Context, accessToken string) (*AccountDTO, error) {
+	resp, err := rr.rgapiClient.DoReq(ctx, "GET", RGAPI_DEFAULT_REGION, "/riot/account/v1/accounts/me", &accessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("err when getting account Status: %d Response: %s", resp.StatusCode, string(body))
+	}
+
+	var accountDTO AccountDTO
+	if err := json.Unmarshal(body, &accountDTO); err != nil {
+		return nil, err
+	}
+
+	return &accountDTO, nil
 }
