@@ -21,7 +21,10 @@ func main() {
 	hc := initHTTPController()
 
 	e := echo.New()
-	e.Use(middleware.Recover())
+	e.Use(
+		middleware.Recover(),
+		middleware.CORS(),
+	)
 
 	e.GET("/", hc.Login)
 	e.GET("/summoners/overview", hc.SummonerProfileByName)
