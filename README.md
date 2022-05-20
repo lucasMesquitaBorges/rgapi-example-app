@@ -161,7 +161,12 @@ You will be redirected to Riot SSO Login Page. Authenticate using your account c
 
 ![Riot Login Page](./docs/img/rso-form.png "Riot Login Page")
 
-After login you will be redirected to local app. The app will request [/riot/account/v1/accounts/me](https://developer.riotgames.com/apis#account-v1/GET_getByAccessToken) using an access token of your account.
+After login you will be redirected to local app. Click `My Account`. The app will request [/riot/account/v1/accounts/me](https://developer.riotgames.com/apis#account-v1/GET_getByAccessToken) using an access token of your account.
+
+![App Home Signed](./docs/img/app-home-signed.png "App Home Signed")
+
+When following `My Account` you receive a response with the same structure of this example:
+
 ```json
 {
     "puuid": "Player Universal Unique ID",
@@ -170,3 +175,8 @@ After login you will be redirected to local app. The app will request [/riot/acc
 }
 ```
 > The json values are only examples. For puuid you will receive an encrypted string.
+
+## Logout
+Go to app home (`local.exampleapp.com:3000`) and click `Logout`.
+
+You will be redirect to riot SSO logout flow. If you return to the app home page you will see `Sign In` link.
