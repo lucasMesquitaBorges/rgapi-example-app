@@ -20,7 +20,10 @@ const APP_BASE_URL = "http://local.exampleapp.com:3000"
 const APP_CALLBACK_PATH = "/oauth-callback"
 const AUTHORIZE_URL = RSO_BASE_URI + "/authorize"
 const TOKEN_URL = RSO_BASE_URI + "/token"
+const LOGOUT_URL = RSO_BASE_URI + "/logout"
 const APP_CALLBACK_URL = APP_BASE_URL + APP_CALLBACK_PATH
+
+var tokenResponse *TokenResponse
 
 type TokenResponse struct {
 	AccessToken  string `json:"access_token"`
@@ -65,13 +68,11 @@ type HTTPController struct {
 }
 
 func (hr *HTTPController) Login(c echo.Context) error {
-	signInLink := AUTHORIZE_URL +
-		"?redirect_uri=" + APP_CALLBACK_URL +
-		"&client_id=" + "riot-example-app" +
-		"&response_type=code" +
-		"&scope=openid"
+	if tokenResponse == nil {
+		return hr.loginPage(c)
+	}
 
-	return c.HTML(http.StatusOK, `<a href="`+signInLink+`">Sign In</a>`)
+	return hr.loggedPage(c)
 }
 
 func (hr *HTTPController) OAUTHCallback(c echo.Context) error {
@@ -104,17 +105,11 @@ func (hr *HTTPController) OAUTHCallback(c echo.Context) error {
 		return internalServerError(c, err)
 	}
 
-	var tokenResponse *TokenResponse
 	if err := json.Unmarshal(body, &tokenResponse); err != nil {
 		return internalServerError(c, err)
 	}
 
-	account, err := hr.SummonerService.GetAccountByAccessToken(c.Request().Context(), tokenResponse.AccessToken)
-	if err != nil {
-		return internalServerError(c, err)
-	}
-
-	return c.JSON(http.StatusOK, AccountResponse(*account))
+	return c.HTML(http.StatusOK, `<script>window.location.href = "/";</script>`)
 }
 
 func (hr *HTTPController) SummonerProfileByName(c echo.Context) error {
@@ -137,6 +132,45 @@ func (hr *HTTPController) SummonerProfileByName(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, summonerResponse)
+}
+
+func (hr *HTTPController) MyAccount(c echo.Context) error {
+	if tokenResponse == nil {
+		return c.String(http.StatusUnauthorized, "Unauthorized")
+	}
+
+	account, err := hr.SummonerService.GetAccountByAccessToken(c.Request().Context(), tokenResponse.AccessToken)
+	if err != nil {
+		return internalServerError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, AccountResponse(*account))
+}
+
+func (hr *HTTPController) Logout(c echo.Context) error {
+	tokenResponse = nil
+	return c.HTML(http.StatusOK, `<script>window.location.href = "`+LOGOUT_URL+`";</script>`)
+}
+
+func (hr *HTTPController) loginPage(c echo.Context) error {
+	signInLink := AUTHORIZE_URL +
+		"?redirect_uri=" + APP_CALLBACK_URL +
+		"&client_id=" + "riot-example-app" +
+		"&response_type=code" +
+		"&scope=openid"
+
+	return c.HTML(http.StatusOK, `<a href="`+signInLink+`">Sign In</a>`)
+}
+
+func (hr *HTTPController) loggedPage(c echo.Context) error {
+	myAccountLink := APP_BASE_URL + "/accounts/me"
+	logoutLink := APP_BASE_URL + "/logout"
+
+	return c.HTML(http.StatusOK, `
+		<a href="`+myAccountLink+`">My Account</a>
+		&nbsp;
+		<a href="`+logoutLink+`">Logout</a>
+	`)
 }
 
 func buildLeagueEntriesFromSummoner(summoner *entities.Summoner) []LeagueEntryResponse {

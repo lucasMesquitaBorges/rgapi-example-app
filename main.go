@@ -21,11 +21,16 @@ func main() {
 	hc := initHTTPController()
 
 	e := echo.New()
-	e.Use(middleware.Recover())
+	e.Use(
+		middleware.Recover(),
+		middleware.CORS(),
+	)
 
 	e.GET("/", hc.Login)
 	e.GET("/summoners/overview", hc.SummonerProfileByName)
 	e.GET(httpcontrollers.APP_CALLBACK_PATH, hc.OAUTHCallback)
+	e.GET("/accounts/me", hc.MyAccount)
+	e.GET("/logout", hc.Logout)
 
 	if err := e.Start(":" + os.Getenv("APP_PORT")); err != nil {
 		e.Logger.Fatal(err)
